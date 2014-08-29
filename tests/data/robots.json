@@ -1,0 +1,6 @@
+{"docs":[
+{"id":"508735512d42b8c3d15ec4e1","key":"508735512d42b8c3d15ec4e1","value":{"rev":"3-bec7d6c6c526538223510af296eb278e"},"doc":{"_id":"508735512d42b8c3d15ec4e1","_rev":"3-bec7d6c6c526538223510af296eb278e","name":"Astro Boy","year":1952,"type":"mechanical"}},
+{"id":"5087358f2d42b8c3d15ec4e2","key":"5087358f2d42b8c3d15ec4e2","value":{"rev":"3-208665810221d51ca40eee66e18f7af2"},"doc":{"_id":"5087358f2d42b8c3d15ec4e2","_rev":"3-208665810221d51ca40eee66e18f7af2","name":"Bender","year":1999,"type":"mechanical"}},
+{"id":"508735d32d42b8c3d15ec4e3","key":"508735d32d42b8c3d15ec4e3","value":{"rev":"3-a64e24a5619373612c9771b6478be3a1"},"doc":{"_id":"508735d32d42b8c3d15ec4e3","_rev":"3-a64e24a5619373612c9771b6478be3a1","name":"Wall-E","year":2008}},
+{"id":"_design/robots","key":"_design/robots","value":{"rev":"1-3394d4e25cb8596d538c5b30d850b741"},"doc":{"_id":"_design/robots","_rev":"1-3394d4e25cb8596d538c5b30d850b741","language":"javascript","views":{"type":{"map":"function(doc) {ntif (doc.type) {n  ttemit(doc.type, doc);nt}n}"},"name":{"map":"function(doc) {ntif (doc.name) {n  ttemit(doc.name, doc);nt}n}"}}}}
+]}

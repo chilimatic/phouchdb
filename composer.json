@@ -11,11 +11,15 @@
     ],
 
     "require": {
-        "php": ">=5.4"
+        "php": ">=5.4",
+        "phalcon/incubator": "dev-master"
     },
     "minimum-stability": "dev",
 
     "autoload": {
+        "psr-4": {
+            "PhouchDb\\Tests\\": "tests/PhouchDb/"
+        },
         "psr-0": {
             "PhouchDb": "src/"
         }

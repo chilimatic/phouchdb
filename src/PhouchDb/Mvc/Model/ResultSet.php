@@ -2,6 +2,9 @@
 /**
  * ResultSet for Models built around CouchDb.
  *
+ * @see http://docs.phalconphp.com/en/latest/api/Phalcon_Mvc_Model_Resultset.html
+ * @see https://github.com/phalcon/cphalcon/blob/master/ext/mvc/model/resultset.c
+ *
  * @package    PhouchDb\Mvc
  * @subpackage Model
  * @author     Mike Holloway <me@mikeholloway.co.uk>
@@ -9,7 +12,7 @@
 
 namespace PhouchDb\Mvc\Model;
 
-class ResultSet extends \Phalcon\Mvc\Model\Resultset
+class Resultset extends \Phalcon\Mvc\Model\Resultset
 {
     /**
      * Init result set.
@@ -33,13 +36,12 @@ class ResultSet extends \Phalcon\Mvc\Model\Resultset
     public function fromArray(array $items)
     {
         $this->_rows = $items;
+        $this->rewind();
         return $this;
     }
 
     /**
      * Return the collection as an array.
-     *
-     * @see https://github.com/phalcon/cphalcon/issues/552#issuecomment-16791464
      *
      * @return array
      */
@@ -48,62 +50,32 @@ class ResultSet extends \Phalcon\Mvc\Model\Resultset
         $items = array();
         $this->rewind();
 
-        foreach ($this->valid() as $item) {
-            $items[] = $item;
+        while ($this->valid() && $item = $this->current()) {
+            $items[] = $item->toArray();
+            $this->next();
         }
 
         return $items;
     }
 
     /**
-     * Retrieve a value from the stack with the provided offset.
+     * Retrieve the item at the current pos.
      *
-     * @param mixed $offset Key to seek in the stack.
-     *
-     * @return mixed
+     * @return \Phalcon\Mvc\Collection
      */
-    public function offsetGet($offset)
+    public function current()
     {
-        return $this->_rows[$offset];
+        return $this->_rows[$this->key()];
     }
 
     /**
-     * Retrieve the first value on the stack.
+     * Check if the current index exists.
      *
-     * @return mixed
-     */
-    public function getFirst()
-    {
-        return reset($this->_rows);
-    }
-
-    /**
-     * Retrieve the last value on the stack.
-     *
-     * @return mixed
-     */
-    public function getLast()
-    {
-        return end($this->_rows);
-    }
-
-    /**
-     * Generator function to loop through items in set.
-     *
-     * Not entirely sure what this *should* be doing, but it's part of the
-     * interface and the docs are useless.
-     *
-     * "Check whether the internal resource has rows to fetch"
-     *
-     * @todo Fix this :p
-     *
-     * @return void
+     * @return boolean
      */
     public function valid()
     {
-        foreach ($this->_rows as $item) {
-            yield $item->toArray();
-        }
+        return $this->offsetExists($this->key());
     }
 
     /**

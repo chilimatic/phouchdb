@@ -68,23 +68,56 @@ class Collection extends \Phalcon\Mvc\Collection
     public static function find($parameters = null)
     {
         $self = self::getInstance();
-        $config = $self->getDI()->get('config');
-        $client = $self->getDI()->get('couchdb');
-        $resources = array();
 
-        // couchdb reserved keys
+        $config = $self->getDI()->get('config');
+        $client = $self->getConnection();
+
+        $resources = array();
+        $method = 'get';
+        $viewKeys = null;
+
         $filterKeys = [
-            'startkey' => 1,
-            'endkey' => 1,
-            'skip' => 1,
-            'limit' => 1,
-            'descending' => 1,
+            // couchdb reserved keys
+            // http://docs.couchdb.org/en/latest/api/database/bulk-api.html
+            'conflicts' => false,
+            'descending' => true,
+            'endkey' => null,
+            'end_key' => null,
+            'endkey_docid' => null,
+            'end_key_doc_id' => null,
+            'include_docs' => true,
+            'inclusive_end' => true,
+            'key' => null,
+            'limit' => null,
+            'skip' => null,
+            'stale' => null,
+            'startkey' => null,
+            'start_key' => null,
+            'startkey_docid' => null,
+            'start_key_doc_id' => null,
+            'update_seq' => false,
+
+            // request body keys
+            'keys' => null,
+
+            // my keys
+            'includeSpecialComponents' => false,
+            'view' => null,
         ];
 
         $uri = '/' . $self->getSource();
 
         if (null === $parameters) {
             $parameters = array();
+        }
+
+        // include the filter keys in our params
+        $parameters = array_filter(array_merge($filterKeys, $parameters));
+
+        if (isset($parameters['keys'])) {
+            $method = 'post';
+            $viewKeys = array_values($parameters['keys']);
+            unset($parameters['keys']);
         }
 
         if (! isset($parameters['view'])) {
@@ -98,14 +131,33 @@ class Collection extends \Phalcon\Mvc\Collection
 
         // json encode any non-filter params
         foreach ($parameters as $key => &$param) {
-            if (! isset($filterKeys[$key])) {
+
+            if ('keys' === $key) {
+                continue;
+            }
+
+            if (is_bool($param)) {
+                $param = true === $param ? 'true' : 'false';
+            } elseif (!is_int($param)) {
                 $param = json_encode($param);
             }
         }
 
+        if (null !== $viewKeys) {
+            /**
+             * filter by keys.
+             *
+             * you'll need to manually sort these results at the time of writing:
+             * http://stackoverflow.com/questions/2817703/sorting-couchdb-views-by-value
+             */
+            $uri .= '?' . http_build_query($parameters);
+            $parameters = json_encode(array('keys' => $viewKeys));
+            $method = 'post';
+        }
+
         // call the couchdb instance
         $response = $client
-            ->get($uri, $parameters)
+            ->{$method}($uri, $parameters)
             ->body;
 
         $parsedResponse = (array) json_decode($response);
@@ -119,18 +171,49 @@ class Collection extends \Phalcon\Mvc\Collection
         ) {
             // multiple resources
             foreach ($parsedResponse['rows'] as $raw) {
-                $item = (array) $raw->value;
-                $resources[] = static::factory($item['type'], $item);
+                if (property_exists($raw, 'error')) {
+                    throw new \Exception($raw->key . ': ' . $raw->error);
+                }
+
+                if (0 === strncmp($raw->id, '_', 1)
+                    && (
+                        false === isset($parameters['includeSpecialComponents'])
+                        || false === $parameters['includeSpecialComponents']
+                    )
+                ) {
+                    // special component
+                    continue;
+                }
+
+                if (property_exists($raw, 'doc')) {
+                    $item = (array) $raw->doc;
+
+                } elseif (property_exists($raw, 'value')) {
+                    $item = (array) $raw->value;
+                }
+
+                $resources[] = self::cloneResult(new static(), $item);
+                unset($item);
             }
 
         } else {
             // single resource
-            $resources = array(static::factory($parsedResponse['type'], $parsedResponse));
+            $resources = array(self::cloneResult(new static(), (array) $parsedResponse));
         }
 
         return new \PhouchDb\Mvc\Model\ResultSet($resources);
     }
 
+
+    /**
+     * Use the couchdb service.
+     *
+     * @return void
+     */
+    public function initialize()
+    {
+        $this->setConnectionService('couchdb');
+    }
 
     /**
      * Set the id of the document.

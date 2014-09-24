@@ -136,9 +136,13 @@ class Collection extends \Phalcon\Mvc\Collection
                 continue;
             }
 
+            if ('true' === strtolower($param) || 'false' === strtolower($param)) {
+                $param = filter_var($param, FILTER_VALIDATE_BOOLEAN);
+            }
+
             if (is_bool($param)) {
                 $param = true === $param ? 'true' : 'false';
-            } elseif (!is_int($param)) {
+            } elseif (!is_numeric($param)) {
                 $param = json_encode($param);
             }
         }

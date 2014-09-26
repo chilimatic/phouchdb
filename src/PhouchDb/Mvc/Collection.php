@@ -137,13 +137,18 @@ class Collection extends \Phalcon\Mvc\Collection
             }
 
             if ('true' === strtolower($param) || 'false' === strtolower($param)) {
+                // ensure string bools are cast to bool
                 $param = filter_var($param, FILTER_VALIDATE_BOOLEAN);
             }
 
-            if (is_bool($param)) {
-                $param = true === $param ? 'true' : 'false';
-            } elseif (!is_numeric($param)) {
-                $param = json_encode($param);
+            if (is_numeric($param)) {
+                // ensure string numbers are cast to string
+                $param += 0;
+            }
+
+            if (is_string($param)) {
+                // remove surplus quotes, json_encode will add these if required
+                $param = trim($param, '"');
             }
         }
 
@@ -155,9 +160,13 @@ class Collection extends \Phalcon\Mvc\Collection
              * http://stackoverflow.com/questions/2817703/sorting-couchdb-views-by-value
              */
             $uri .= '?' . http_build_query($parameters);
-            $parameters = json_encode(array('keys' => $viewKeys));
+            $parameters = array('keys' => $viewKeys);
             $method = 'post';
         }
+
+        $parameters = json_encode($parameters);
+
+        print_r($parameters); exit;
 
         // call the couchdb instance
         $response = $client
